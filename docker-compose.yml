@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: opportunity_engine_db
+    environment:
+      POSTGRES_USER: opportunity_engine
+      POSTGRES_PASSWORD: opportunity_engine
+      POSTGRES_DB: opportunity_engine
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opportunity_engine -d opportunity_engine"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: opportunity_engine_backend
+    ports:
+      - "8100:8100"
+    environment:
+      DATABASE_URL: postgresql://opportunity_engine:opportunity_engine@db:5432/opportunity_engine
+      POSTGRES_USER: opportunity_engine
+      POSTGRES_PASSWORD: opportunity_engine
+      POSTGRES_DB: opportunity_engine
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: opportunity_engine_frontend
+    ports:
+      - "3100:3100"
+    environment:
+      PORT: 3100
+      NEXT_PUBLIC_API_URL: http://localhost:8100
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
