@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
-from app.models.opportunity import OpportunityStatus
+from ..models.opportunity import OpportunityStatus
 
 
 class OpportunityCreate(BaseModel):
