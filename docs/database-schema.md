@@ -63,3 +63,35 @@ To auto-generate a new migration script based on SQLAlchemy models changes:
 ```bash
 alembic revision --autogenerate -m "description_of_changes"
 ```
+
+---
+
+## Ingestion Workflow
+
+The platform ingests opportunities from various source connectors (such as Reddit) using a structured workflow:
+
+```mermaid
+graph TD
+    A[Reddit Connector] -->|Fetch & Map| B[Pydantic Opportunity Model]
+    B -->|Check source_url| C{Duplicate Check}
+    C -->|Already exists| D[Skip & Log Duplicate]
+    C -->|New source_url| E[OpportunityRepository]
+    E -->|Insert| F[(PostgreSQL Database)]
+```
+
+### 1. Extraction & Mapping
+Source connectors pull opportunities from public APIs or JSON feeds (e.g. `RedditConnector` fetches from subreddits like `r/forhire`). Mapped fields are loaded into Pydantic validation schemas (`app.models.opportunity.Opportunity`) to guarantee structured formats (UUIDs, ISO datetimes).
+
+### 2. Duplicate Prevention
+Before persisting, the ingestion script queries PostgreSQL through `OpportunityRepository.find_by_source_url(source_url)`.
+- If a record with the same `source_url` already exists, the insert is skipped to prevent duplicate opportunities.
+- If no record exists, it proceeds to persistence.
+
+### 3. Database Persistence
+New opportunities are mapped to the SQLAlchemy database model and persisted via `OpportunityRepository.create_opportunity()`.
+
+### 4. How to Run Ingestion Script
+```bash
+# From workspace backend directory
+./.venv/bin/python scripts/collect_reddit.py
+```
