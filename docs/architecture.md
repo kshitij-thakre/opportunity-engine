@@ -32,6 +32,11 @@ PostgreSQL
 ### 1. Next.js Frontend
 - **Port**: `3100`
 - **Role**: Renders the user dashboard, search results, and opportunity pipeline configuration. Serves static assets, manages client states, and communicates asynchronously with the FastAPI Backend.
+- **Key Components**:
+  - `page.tsx` (Client Dashboard): Handles asynchronous API fetching (`GET /opportunities`), interactive search state, and source/status dropdown selections.
+  - `OpportunityList.tsx`: Generates a responsive grid displaying filtered opportunities.
+  - `OpportunityCard.tsx`: Formats individual opportunities (title, type, location, posted date, status) as interactive glassmorphic cards.
+  - Skeletons: Renders loader screen skeletons when fetching database records.
 
 ### 2. FastAPI Backend
 - **Port**: `8100`
