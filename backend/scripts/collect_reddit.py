@@ -5,6 +5,8 @@ import sys
 sys.path.insert(0, "/Users/kshitijthakre/Apps/opportunity-engine/backend")
 
 from app.connectors.reddit_connector import RedditConnector
+from app.db.database import SessionLocal
+from app.repositories.opportunity_repository import OpportunityRepository
 
 def run_collection():
     print("Starting Reddit Opportunity Collection MVP...")
@@ -74,22 +76,40 @@ def run_collection():
         except Exception as e:
             print(f"Failed to process mock data: {e}")
             
-    # Display sample outputs
+    # Persist opportunities to the database
     if opportunities:
-        print("\n--- Mapped Opportunity Samples ---")
-        for i, opp in enumerate(opportunities, 1):
-            print(f"\n[{i}] Title: {opp.title}")
-            print(f"    Source: {opp.source}")
-            print(f"    URL: {opp.source_url}")
-            print(f"    Posted At: {opp.posted_at}")
-            print(f"    Collected At: {opp.collected_at}")
-            print(f"    Status: {opp.status}")
-            desc_preview = (
-                opp.description[:120] + "..."
-                if opp.description and len(opp.description) > 120
-                else opp.description
-            )
-            print(f"    Description Preview: {desc_preview}")
+        print("\n--- Saving Opportunities to Database ---")
+        db = SessionLocal()
+        repo = OpportunityRepository(db)
+        
+        inserted_count = 0
+        skipped_count = 0
+        
+        try:
+            for opp in opportunities:
+                # Check for duplicate by source_url
+                if opp.source_url:
+                    existing = repo.find_by_source_url(opp.source_url)
+                    if existing:
+                        print(f"Skipped duplicate opportunity: {opp.title} ({opp.source_url})")
+                        skipped_count += 1
+                        continue
+                
+                # Insert if not duplicate
+                repo.create_opportunity(opp.model_dump())
+                print(f"Stored new opportunity: {opp.title} ({opp.source_url})")
+                inserted_count += 1
+                
+            print(f"\nDatabase Ingestion Complete.")
+            print(f"Total processed: {len(opportunities)}")
+            print(f"Total inserted: {inserted_count}")
+            print(f"Total skipped (duplicates): {skipped_count}")
+            
+        except Exception as e:
+            print(f"Database operation failed: {e}")
+            db.rollback()
+        finally:
+            db.close()
     else:
         print("No opportunities collected or verified.")
 

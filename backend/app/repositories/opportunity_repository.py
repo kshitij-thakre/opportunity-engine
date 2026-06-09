@@ -46,3 +46,7 @@ class OpportunityRepository:
         self.db.delete(db_opp)
         self.db.commit()
         return True
+
+    def find_by_source_url(self, source_url: str) -> Optional[Opportunity]:
+        """Fetch opportunity by source URL."""
+        return self.db.query(Opportunity).filter(Opportunity.source_url == source_url).first()
