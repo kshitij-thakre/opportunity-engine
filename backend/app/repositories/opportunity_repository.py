@@ -19,9 +19,12 @@ class OpportunityRepository:
         """Fetch opportunity by ID."""
         return self.db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
 
-    def get_all_opportunities(self) -> List[Opportunity]:
-        """Return all opportunities."""
-        return self.db.query(Opportunity).all()
+    def get_all_opportunities(self, source: Optional[str] = None) -> List[Opportunity]:
+        """Return all opportunities, optionally filtered by source."""
+        query = self.db.query(Opportunity)
+        if source:
+            query = query.filter(Opportunity.source == source)
+        return query.all()
 
     def update_opportunity(self, opportunity_id: UUID, update_data: dict) -> Optional[Opportunity]:
         """Update an existing opportunity."""

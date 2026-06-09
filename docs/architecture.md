@@ -32,6 +32,11 @@ PostgreSQL
 ### 1. Next.js Frontend
 - **Port**: `3100`
 - **Role**: Renders the user dashboard, search results, and opportunity pipeline configuration. Serves static assets, manages client states, and communicates asynchronously with the FastAPI Backend.
+- **Key Components**:
+  - `page.tsx` (Client Dashboard): Handles asynchronous API fetching (`GET /opportunities`), interactive search state, and source/status dropdown selections.
+  - `OpportunityList.tsx`: Generates a responsive grid displaying filtered opportunities.
+  - `OpportunityCard.tsx`: Formats individual opportunities (title, type, location, posted date, status) as interactive glassmorphic cards.
+  - Skeletons: Renders loader screen skeletons when fetching database records.
 
 ### 2. FastAPI Backend
 - **Port**: `8100`
@@ -40,3 +45,35 @@ PostgreSQL
 ### 3. PostgreSQL Database
 - **Port**: `5433` (Exposed Host Port)
 - **Role**: Relational store for platform data, maintaining application states, qualified opportunities, and credentials.
+
+---
+
+## Data Ingestion & Retrieval Flows
+
+### 1. Ingestion Flow (Reddit Connector)
+```text
+Reddit Public API/JSON
+↓
+RedditConnector (Extraction & Pydantic Mapping)
+↓
+Deduplication Check (source_url check via Repository)
+↓
+OpportunityRepository (SQLAlchemy Model Creation)
+↓
+PostgreSQL Database
+```
+
+### 2. Retrieval Flow (REST API)
+```text
+Client Browser / Next.js Frontend
+↓
+GET /opportunities (FastAPI Endpoint)
+↓
+Database Session Injection (get_db dependency)
+↓
+OpportunityRepository (SQLAlchemy Database Query)
+↓
+FastAPI Serialization (Pydantic OpportunityResponse Schema)
+↓
+JSON Payload
+```
